@@ -1,6 +1,7 @@
 import Foundation
 import DeviceCheck
 import Operation_iOS
+import SDKLogger
 
 public protocol AppAttestProviding {
     func setup()
@@ -22,7 +23,7 @@ public final class AttestProvider {
     let repository: AnyDataProviderRepository<AppAttestLocalSettings>
     let operationQueue: OperationQueue
     let syncQueue: DispatchQueue
-    let logger: LoggerProtocol?
+    let logger: SDKLoggerProtocol?
 
     private var attestedKeyId: AppAttestKeyId?
     private let attestationCancellable = CancellableCallStore()
@@ -35,7 +36,7 @@ public final class AttestProvider {
         attestFactory: AppAttestFactoryProtocol,
         repository: AnyDataProviderRepository<AppAttestLocalSettings>,
         operationQueue: OperationQueue,
-        logger: LoggerProtocol? = nil
+        logger: SDKLoggerProtocol? = nil
     ) {
         self.attestationIdentifier = attestationIdentifier
         self.appAttestService = appAttestService
