@@ -6,16 +6,17 @@ protocol AppAttestClientHashing {
 
 final class AppAttestClientHashCalculator: AppAttestClientHashing {
     func hash(challenge: Data, clientId: Data?, data: Data?) throws -> Data {
-        guard let data else {
-            return challenge.sha256()
+        let payload = switch (clientId, data) {
+        case (.none, .none):
+            challenge.sha256()
+        case let (.some(clientId), .none):
+            challenge + clientId.sha256()
+        case let (.none, .some(data)):
+            challenge + data.sha256()
+        case let (.some(clientId), .some(data)):
+            challenge + clientId + data.sha256()
         }
         
-        let dataHash = data.sha256()
-        
-        guard let clientId else {
-            return (challenge + dataHash).sha256()
-        }
-        
-        return (challenge + clientId + dataHash).sha256()
+        return payload.sha256()
     }
 }
