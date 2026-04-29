@@ -15,6 +15,7 @@ protocol AppAttestServiceProtocol {
     func createAssertionWrapper(
         challengeClosure: @escaping () throws -> Data,
         dataClosure: @escaping () throws -> Data?,
+        clientIdClosure: @escaping () throws -> Data?,
         keyId: AppAttestKeyId
     ) -> CompoundOperationWrapper<AppAttestAssertionModel>
 }
@@ -99,7 +100,7 @@ final class AppAttestService {
         AsyncClosureOperation { completion in
             let keyId = try keyIdOperation.extractNoCancellableResultData()
             let challenge = try challengeClosure()
-            let hash = try hashCalculator.hash(challenge: challenge, data: nil)
+            let hash = try hashCalculator.hash(challenge: challenge, clientId: nil, data: nil)
 
             service.attestKey(keyId, clientDataHash: hash) { attestation, error in
                 let result: Result<AppAttestModel, Error>
@@ -144,13 +145,19 @@ extension AppAttestService: AppAttestServiceProtocol {
     func createAssertionWrapper(
         challengeClosure: @escaping () throws -> Data,
         dataClosure: @escaping () throws -> Data?,
+        clientIdClosure: @escaping () throws -> Data?,
         keyId: AppAttestKeyId
     ) -> CompoundOperationWrapper<AppAttestAssertionModel> {
         let operation = AsyncClosureOperation { completionClosure in
             let challenge = try challengeClosure()
             let data = try dataClosure()
+            let clientId = try clientIdClosure()
 
-            let hash = try self.hashCalculator.hash(challenge: challenge, data: data)
+            let hash = try self.hashCalculator.hash(
+                challenge: challenge,
+                clientId: clientId,
+                data: data
+            )
 
             guard let bundleId = self.bundle.bundleIdentifier else {
                 throw AppAttestServiceError.bundleIdUnavailable
