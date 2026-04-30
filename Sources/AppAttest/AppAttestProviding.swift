@@ -5,15 +5,26 @@ import SDKLogger
 
 public protocol AppAttestProviding {
     func setup()
+
+    func appAttestModifier(
+        for bodyDataClosure: @escaping () throws -> Data?,
+        clientIdClosure: (() throws -> Data)?
+    ) -> CompoundOperationWrapper<HttpRequestModifier>
+}
+
+public extension AppAttestProviding {
     func appAttestModifier(
         for bodyDataClosure: @escaping () throws -> Data?
-    ) -> CompoundOperationWrapper<HttpRequestModifier>
+    ) -> CompoundOperationWrapper<HttpRequestModifier> {
+        appAttestModifier(for: bodyDataClosure, clientIdClosure: nil)
+    }
 }
 
 public final class AttestProvider {
     struct PendingRequest {
         let resultClosure: (Result<HttpRequestModifier, Error>) -> Void
         let bodyData: Data?
+        let clientId: Data?
         let queue: DispatchQueue
     }
 
@@ -193,6 +204,7 @@ extension AttestProvider {
             fetchAssertion(
                 for: requestId,
                 bodyData: request.bodyData,
+                clientId: request.clientId,
                 keyId: keyId,
                 runningCompletionIn: request.queue,
                 completion: request.resultClosure
@@ -243,6 +255,7 @@ extension AttestProvider {
     private func doAssertion(
         for requestId: UUID,
         bodyData: Data?,
+        clientId: Data?,
         queue: DispatchQueue,
         completion: @escaping (Result<HttpRequestModifier, Error>) -> Void
     ) {
@@ -258,6 +271,7 @@ extension AttestProvider {
             fetchAssertion(
                 for: requestId,
                 bodyData: bodyData,
+                clientId: clientId,
                 keyId: attestedKeyId,
                 runningCompletionIn: queue,
                 completion: completion
@@ -266,6 +280,7 @@ extension AttestProvider {
             pendingRequests[requestId] = .init(
                 resultClosure: completion,
                 bodyData: bodyData,
+                clientId: clientId,
                 queue: queue
             )
 
@@ -282,6 +297,7 @@ extension AttestProvider {
     private func fetchAssertion(
         for requestId: UUID,
         bodyData: Data?,
+        clientId: Data?,
         keyId: AppAttestKeyId,
         runningCompletionIn queue: DispatchQueue,
         completion: @escaping (Result<HttpRequestModifier, Error>) -> Void
@@ -293,6 +309,7 @@ extension AttestProvider {
         let assertionWrapper = appAttestService.createAssertionWrapper(
             challengeClosure: { try challengeWrapper.targetOperation.extractNoCancellableResultData().challenge },
             dataClosure: { bodyData },
+            clientIdClosure: { clientId },
             keyId: keyId
         )
 
@@ -335,18 +352,21 @@ extension AttestProvider: AppAttestProviding {
     }
 
     public func appAttestModifier(
-        for bodyDataClosure: @escaping () throws -> Data?
+        for bodyDataClosure: @escaping () throws -> Data?,
+        clientIdClosure: (() throws -> Data)?
     ) -> CompoundOperationWrapper<HttpRequestModifier> {
         let requestId = UUID()
 
         let operation = AsyncClosureOperation<HttpRequestModifier>(
             operationClosure: { [weak self] completion in
                 let bodyData = try bodyDataClosure()
+                let clientId = try clientIdClosure?()
 
                 self?.syncQueue.async {
                     self?.doAssertion(
                         for: requestId,
                         bodyData: bodyData,
+                        clientId: clientId,
                         queue: .global(),
                         completion: completion
                     )
