@@ -8,7 +8,7 @@ final class AppAttestClientHashCalculator: AppAttestClientHashing {
     func hash(challenge: Data, clientId: Data?, data: Data?) throws -> Data {
         let payload = switch (clientId, data) {
         case (.none, .none):
-            challenge.sha256()
+            challenge
         case let (.some(clientId), .none):
             challenge + clientId.sha256()
         case let (.none, .some(data)):
