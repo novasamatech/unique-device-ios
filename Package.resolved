@@ -1,5 +1,5 @@
 {
-  "originHash" : "2a4b07b5cc0c96e8d29bf981f1f5b24fdeadd0699f821584f9f03805ecdbc9b9",
+  "originHash" : "62439ce99bb0058614443670b9f4793435eb245b4e52198e588f24f0d53f5a74",
   "pins" : [
     {
       "identity" : "keystore-ios",
@@ -24,8 +24,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/novasamatech/Operation-iOS",
       "state" : {
-        "revision" : "b26b43a3c6d7f8d3622da0856119b88299a9c691",
-        "version" : "3.0.0"
+        "revision" : "41c976890b2eea5a54235ac4bf09acc19e0a8fb9",
+        "version" : "3.1.0"
       }
     }
   ],
